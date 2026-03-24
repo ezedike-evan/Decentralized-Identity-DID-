@@ -43,12 +43,24 @@ import ErrorDisplay from '../components/ErrorDisplay';
 const issueSchema = yup.object().shape({
   issuerDID: yup.string()
     .required('Issuer DID is required')
-    .matches(/^did:stellar:G[A-Z0-9]{55}$/, 'Invalid DID format'),
+    .matches(/^did:stellar:G[A-Z2-7]{55}$/, 'Invalid DID format (did:stellar:G...)'),
   subjectDID: yup.string()
     .required('Subject DID is required')
-    .matches(/^did:stellar:G[A-Z0-9]{55}$/, 'Invalid DID format'),
+    .matches(/^did:stellar:G[A-Z2-7]{55}$/, 'Invalid DID format (did:stellar:G...)'),
   credentialType: yup.string().required('Credential type is required'),
-  claims: yup.string().required('Claims are required'),
+  claims: yup.string()
+    .required('Claims are required')
+    .test('is-json', 'Claims must be a valid JSON object', (value) => {
+      try {
+        const parsed = JSON.parse(value);
+        return typeof parsed === 'object' && parsed !== null;
+      } catch (e) {
+        return false;
+      }
+    }),
+  signerSecret: yup.string()
+    .required('Signer secret is required')
+    .matches(/^S[A-Z2-7]{55}$/, 'Invalid Stellar secret key format'),
 });
 
 const verifySchema = yup.object().shape({
@@ -71,6 +83,7 @@ const Credentials = () => {
       subjectDID: '',
       credentialType: 'university-degree',
       claims: '',
+      signerSecret: wallet?.secretKey || '',
     },
   });
 
@@ -80,6 +93,13 @@ const Credentials = () => {
       credentialId: '',
     },
   });
+
+  // Update secret key when wallet changes
+  React.useEffect(() => {
+    if (wallet?.secretKey) {
+      issueForm.setValue('signerSecret', wallet.secretKey);
+    }
+  }, [wallet, issueForm]);
 
   React.useEffect(() => {
     fetchTemplates();
@@ -103,23 +123,19 @@ const Credentials = () => {
     setResult(null);
 
     try {
-      let claims;
-      try {
-        claims = JSON.parse(data.claims);
-      } catch (parseError) {
-        throw new Error('Invalid JSON in claims field');
-      }
+      const claims = JSON.parse(data.claims);
 
-      const response = await stellarAPI.contracts.issueCredential(
-        data.issuerDID,
-        data.subjectDID,
-        data.credentialType,
-        claims
-      );
+      const response = await stellarAPI.contracts.issueCredential({
+        issuerDID: data.issuerDID,
+        subjectDID: data.subjectDID,
+        credentialType: data.credentialType,
+        claims: claims,
+        signerSecret: data.signerSecret
+      });
       
       setResult(response.data);
       toast.success('Credential issued successfully!');
-      issueForm.reset();
+      issueForm.reset({ ...issueForm.control._defaultValues, signerSecret: data.signerSecret });
     } catch (err) {
       const errorInfo = handleApiError(err);
       setError(errorInfo);
@@ -273,16 +289,13 @@ const Credentials = () => {
                             {...field}
                             minRows={6}
                             placeholder='{"degree": "Bachelor of Science", "university": "Example University"}'
-                            sx={{
+                            style={{
                               width: '100%',
                               fontFamily: 'monospace',
                               fontSize: '0.9rem',
                               padding: '12px',
-                              border: 1,
-                              borderColor: 'divider',
+                              border: '1px solid #ccc',
                               borderRadius: '4px',
-                              backgroundColor: 'background.paper',
-                              color: 'text.primary'
                             }}
                           />
                           {issueForm.formState.errors.claims && (
@@ -291,6 +304,23 @@ const Credentials = () => {
                             </Typography>
                           )}
                         </Box>
+                      )}
+                    />
+
+                    <Controller
+                      name="signerSecret"
+                      control={issueForm.control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="Signer Secret Key"
+                          type="password"
+                          placeholder="SABCDEFGHIJKLMNOPQRSTUVWXYZ234567..."
+                          fullWidth
+                          margin="normal"
+                          error={!!issueForm.formState.errors.signerSecret}
+                          helperText={issueForm.formState.errors.signerSecret?.message || 'The secret key of the issuer'}
+                        />
                       )}
                     />
 

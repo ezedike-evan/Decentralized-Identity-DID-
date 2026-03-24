@@ -41,7 +41,7 @@ import ErrorDisplay from '../components/ErrorDisplay';
 const schema = yup.object().shape({
   publicKey: yup.string()
     .required('Public key is required')
-    .matches(/^G[A-Z0-9]{55}$/, 'Invalid Stellar public key format'),
+    .matches(/^G[A-Z2-7]{55}$/, 'Invalid Stellar public key format'),
 });
 
 const Account = () => {

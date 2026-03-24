@@ -31,7 +31,14 @@ import { handleApiError } from '../utils/errorHandler';
 import ErrorDisplay from '../components/ErrorDisplay';
 
 const schema = yup.object().shape({
-  serviceEndpoint: yup.string().url('Must be a valid URL').optional(),
+  serviceEndpoint: yup.string()
+    .url('Must be a valid URL (e.g., https://example.com)')
+    .nullable()
+    .notRequired()
+    .transform((value) => (value === '' ? null : value)),
+  signerSecret: yup.string()
+    .required('Secret key is required for signing')
+    .matches(/^S[A-Z2-7]{55}$/, 'Invalid Stellar secret key format. Form: S...'),
 });
 
 const CreateDID = () => {
@@ -44,8 +51,16 @@ const CreateDID = () => {
     resolver: yupResolver(schema),
     defaultValues: {
       serviceEndpoint: '',
+      signerSecret: wallet?.secretKey || '',
     },
   });
+
+  // Update secret key when wallet changes
+  React.useEffect(() => {
+    if (wallet?.secretKey) {
+      reset({ ...control._defaultValues, signerSecret: wallet.secretKey });
+    }
+  }, [wallet, reset, control._defaultValues]);
 
   const handleCreateDID = async (data) => {
     setLoading(true);
@@ -58,11 +73,15 @@ const CreateDID = () => {
         await connectWallet();
       }
 
-      const response = await stellarAPI.post('/contracts/register-did', {
+      if (!wallet?.publicKey) {
+        throw new Error('Wallet not connected or public key missing');
+      }
+
+      const response = await stellarAPI.contracts.registerDID({
         did: `did:stellar:${wallet.publicKey}`,
         publicKey: wallet.publicKey,
         serviceEndpoint: data.serviceEndpoint || undefined,
-        signerSecret: wallet.secretKey // In production, this should be handled securely
+        signerSecret: data.signerSecret
       });
 
       setResult(response.data);
@@ -85,7 +104,7 @@ const CreateDID = () => {
   const handleCreateAccount = async () => {
     setLoading(true);
     try {
-      const response = await stellarAPI.post('/contracts/create-account');
+      const response = await stellarAPI.contracts.createAccount();
       toast.success('New account created! Check console for details.');
       console.log('New Account:', response.data);
     } catch (err) {
@@ -185,6 +204,23 @@ const CreateDID = () => {
                       margin="normal"
                       error={!!errors.serviceEndpoint}
                       helperText={errors.serviceEndpoint?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="signerSecret"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Signer Secret Key"
+                      type="password"
+                      placeholder="SABCDEFGHIJKLMNOPQRSTUVWXYZ234567..."
+                      fullWidth
+                      margin="normal"
+                      error={!!errors.signerSecret}
+                      helperText={errors.signerSecret?.message || 'Stellar secret key (starts with S)'}
                     />
                   )}
                 />
