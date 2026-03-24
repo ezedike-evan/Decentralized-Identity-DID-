@@ -2,6 +2,56 @@ const DIDContract = require('../../contracts/stellar/DIDContract');
 const StellarSDK = require('stellar-sdk');
 const logger = require('../utils/logger');
 
+// Custom error classes for better error handling
+class ContractAddressNotSetError extends Error {
+  constructor(message = 'Contract address not set') {
+    super(message);
+    this.name = 'ContractAddressNotSet';
+  }
+}
+
+class ContractDeploymentFailedError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ContractDeploymentFailed';
+  }
+}
+
+class DIDRegistrationFailedError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'DIDRegistrationFailed';
+  }
+}
+
+class DIDUpdateFailedError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'DIDUpdateFailed';
+  }
+}
+
+class CredentialIssuanceFailedError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'CredentialIssuanceFailed';
+  }
+}
+
+class TransactionFailedError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'TransactionFailed';
+  }
+}
+
+class AccountNotFoundError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'AccountNotFound';
+  }
+}
+
 class ContractService {
   constructor() {
     this.contract = new DIDContract(process.env.STELLAR_HORIZON_URL);
@@ -29,7 +79,7 @@ class ContractService {
       return result;
     } catch (error) {
       logger.error('Contract deployment failed:', error);
-      throw new Error(`Contract deployment failed: ${error.message}`);
+      throw new ContractDeploymentFailedError(error.message);
     }
   }
 
@@ -41,7 +91,7 @@ class ContractService {
       logger.info('Registering DID on contract', { did });
       
       if (!this.contract.contractAddress) {
-        throw new Error('Contract address not set');
+        throw new ContractAddressNotSetError();
       }
 
       const result = await this.contract.registerDID(
@@ -59,7 +109,7 @@ class ContractService {
       return result;
     } catch (error) {
       logger.error('DID registration failed:', error);
-      throw new Error(`DID registration failed: ${error.message}`);
+      throw new DIDRegistrationFailedError(error.message);
     }
   }
 
@@ -80,7 +130,7 @@ class ContractService {
       return result;
     } catch (error) {
       logger.error('DID update failed:', error);
-      throw new Error(`DID update failed: ${error.message}`);
+      throw new DIDUpdateFailedError(error.message);
     }
   }
 
@@ -111,7 +161,7 @@ class ContractService {
       return result;
     } catch (error) {
       logger.error('Credential issuance failed:', error);
-      throw new Error(`Credential issuance failed: ${error.message}`);
+      throw new CredentialIssuanceFailedError(error.message);
     }
   }
 

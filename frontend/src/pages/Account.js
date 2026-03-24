@@ -35,6 +35,8 @@ import * as yup from 'yup';
 import { toast } from 'react-toastify';
 import { stellarAPI } from '../services/api';
 import { useWallet } from '../hooks/useWallet';
+import { handleApiError } from '../utils/errorHandler';
+import ErrorDisplay from '../components/ErrorDisplay';
 
 const schema = yup.object().shape({
   publicKey: yup.string()
@@ -46,7 +48,7 @@ const Account = () => {
   const [loading, setLoading] = useState(false);
   const [accountInfo, setAccountInfo] = useState(null);
   const [transactions, setTransactions] = useState([]);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const { wallet, isConnected } = useWallet();
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm({
@@ -77,9 +79,9 @@ const Account = () => {
       
       toast.success('Account information loaded!');
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message;
-      setError(errorMessage);
-      toast.error('Failed to fetch account information');
+      const errorInfo = handleApiError(err);
+      setError(errorInfo);
+      toast.error(errorInfo.message);
     } finally {
       setLoading(false);
     }
@@ -432,9 +434,10 @@ const Account = () => {
         {/* Error Display */}
         {error && (
           <Grid item xs={12}>
-            <Alert severity="error">
-              {error}
-            </Alert>
+            <ErrorDisplay 
+              error={error} 
+              onClose={() => setError(null)} 
+            />
           </Grid>
         )}
       </Grid>

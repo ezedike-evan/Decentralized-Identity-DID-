@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
+import { handleApiError } from '../utils/errorHandler';
 
 export const useWallet = () => {
   const [wallet, setWallet] = useState(null);
@@ -89,7 +90,8 @@ export const useWallet = () => {
       }
       throw new Error('Failed to create account');
     } catch (error) {
-      toast.error(error.message || 'Failed to connect wallet');
+      const errorInfo = handleApiError(error);
+      toast.error(errorInfo.message);
       throw error;
     } finally {
       setLoading(false);

@@ -27,6 +27,8 @@ import * as yup from 'yup';
 import { toast } from 'react-toastify';
 import { stellarAPI } from '../services/api';
 import { useWallet } from '../hooks/useWallet';
+import { handleApiError } from '../utils/errorHandler';
+import ErrorDisplay from '../components/ErrorDisplay';
 
 const schema = yup.object().shape({
   serviceEndpoint: yup.string().url('Must be a valid URL').optional(),
@@ -35,7 +37,7 @@ const schema = yup.object().shape({
 const CreateDID = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const { wallet, connectWallet, isConnected, loading: walletLoading } = useWallet();
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm({
@@ -67,9 +69,9 @@ const CreateDID = () => {
       toast.success('DID created successfully!');
       reset();
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message;
-      setError(errorMessage);
-      toast.error('Failed to create DID');
+      const errorInfo = handleApiError(err);
+      setError(errorInfo);
+      toast.error(errorInfo.message);
     } finally {
       setLoading(false);
     }
@@ -278,10 +280,10 @@ const CreateDID = () => {
         {/* Error Display */}
         {error && (
           <Grid item xs={12}>
-            <Alert severity="error">
-              <Error sx={{ mr: 1 }} />
-              {error}
-            </Alert>
+            <ErrorDisplay 
+              error={error} 
+              onClose={() => setError(null)} 
+            />
           </Grid>
         )}
       </Grid>

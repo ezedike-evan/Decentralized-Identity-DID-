@@ -37,6 +37,8 @@ import * as yup from 'yup';
 import { toast } from 'react-toastify';
 import { stellarAPI } from '../services/api';
 import { useWallet } from '../hooks/useWallet';
+import { handleApiError } from '../utils/errorHandler';
+import ErrorDisplay from '../components/ErrorDisplay';
 
 const issueSchema = yup.object().shape({
   issuerDID: yup.string()
@@ -57,7 +59,7 @@ const Credentials = () => {
   const [activeTab, setActiveTab] = useState('issue');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [templates, setTemplates] = useState([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const { wallet, isConnected } = useWallet();
@@ -119,9 +121,9 @@ const Credentials = () => {
       toast.success('Credential issued successfully!');
       issueForm.reset();
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message;
-      setError(errorMessage);
-      toast.error('Failed to issue credential');
+      const errorInfo = handleApiError(err);
+      setError(errorInfo);
+      toast.error(errorInfo.message);
     } finally {
       setLoading(false);
     }
@@ -140,9 +142,9 @@ const Credentials = () => {
       setResult(response.data);
       toast.success('Credential verification completed!');
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message;
-      setError(errorMessage);
-      toast.error('Failed to verify credential');
+      const errorInfo = handleApiError(err);
+      setError(errorInfo);
+      toast.error(errorInfo.message);
     } finally {
       setLoading(false);
     }
@@ -529,9 +531,10 @@ const Credentials = () => {
         {/* Error Display */}
         {error && (
           <Grid item xs={12}>
-            <Alert severity="error">
-              {error}
-            </Alert>
+            <ErrorDisplay 
+              error={error} 
+              onClose={() => setError(null)} 
+            />
           </Grid>
         )}
       </Grid>

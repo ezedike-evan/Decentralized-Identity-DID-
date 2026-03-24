@@ -28,6 +28,8 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { toast } from 'react-toastify';
 import { stellarAPI } from '../services/api';
+import { handleApiError } from '../utils/errorHandler';
+import ErrorDisplay from '../components/ErrorDisplay';
 
 const schema = yup.object().shape({
   did: yup.string()
@@ -38,7 +40,7 @@ const schema = yup.object().shape({
 const ResolveDID = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
@@ -58,9 +60,9 @@ const ResolveDID = () => {
       setResult(response.data);
       toast.success('DID resolved successfully!');
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message;
-      setError(errorMessage);
-      toast.error('Failed to resolve DID');
+      const errorInfo = handleApiError(err);
+      setError(errorInfo);
+      toast.error(errorInfo.message);
     } finally {
       setLoading(false);
     }
@@ -293,9 +295,10 @@ const ResolveDID = () => {
         {/* Error Display */}
         {error && (
           <Grid item xs={12}>
-            <Alert severity="error">
-              {error}
-            </Alert>
+            <ErrorDisplay 
+              error={error} 
+              onClose={() => setError(null)} 
+            />
           </Grid>
         )}
       </Grid>

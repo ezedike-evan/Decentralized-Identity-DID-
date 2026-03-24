@@ -38,13 +38,15 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { stellarAPI } from '../services/api';
+import { handleApiError } from '../utils/errorHandler';
+import ErrorDisplay from '../components/ErrorDisplay';
 
 const Contracts = () => {
   const [loading, setLoading] = useState(false);
   const [contractInfo, setContractInfo] = useState(null);
   const [deployDialog, setDeployDialog] = useState(false);
   const [deployerSecret, setDeployerSecret] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchContractInfo();
@@ -58,8 +60,8 @@ const Contracts = () => {
       const response = await stellarAPI.contracts.getInfo();
       setContractInfo(response.data);
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message;
-      setError(errorMessage);
+      const errorInfo = handleApiError(err);
+      setError(errorInfo);
     } finally {
       setLoading(false);
     }
@@ -84,9 +86,9 @@ const Contracts = () => {
       setDeployerSecret('');
       toast.success('Contract deployed successfully!');
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message;
-      setError(errorMessage);
-      toast.error('Failed to deploy contract');
+      const errorInfo = handleApiError(err);
+      setError(errorInfo);
+      toast.error(errorInfo.message);
     } finally {
       setLoading(false);
     }
@@ -391,9 +393,10 @@ const Contracts = () => {
       {/* Error Display */}
       {error && (
         <Grid item xs={12}>
-          <Alert severity="error">
-            {error}
-          </Alert>
+          <ErrorDisplay 
+            error={error} 
+            onClose={() => setError(null)} 
+          />
         </Grid>
       )}
     </Box>
