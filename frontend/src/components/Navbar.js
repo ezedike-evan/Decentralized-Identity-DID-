@@ -58,11 +58,11 @@ const Navbar = () => {
   };
 
   return (
-    <AppBar position="static" elevation={2}>
+    <AppBar position="static" elevation={2} role="navigation" aria-label="Main navigation">
       <Toolbar>
         {/* Logo */}
         <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
-          <AccountTree sx={{ mr: 1, fontSize: 28 }} />
+          <AccountTree sx={{ mr: 1, fontSize: 28 }} aria-hidden="true" />
           <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
             Stellar DID Platform
           </Typography>
@@ -70,12 +70,13 @@ const Navbar = () => {
 
         {/* Desktop Navigation */}
         {!isMobile && (
-          <Box sx={{ display: 'flex', gap: 1, mr: 2 }}>
+          <Box sx={{ display: 'flex', gap: 1, mr: 2 }} component="nav" aria-label="Desktop menu">
             {menuItems.map((item) => (
               <Button
                 key={item.path}
                 color="inherit"
                 onClick={() => handleNavigation(item.path)}
+                aria-current={location.pathname === item.path ? 'page' : undefined}
                 sx={{
                   backgroundColor: location.pathname === item.path ? 'action.selected' : 'transparent',
                   '&:hover': {
@@ -91,7 +92,7 @@ const Navbar = () => {
         )}
 
         {/* Wallet Status & Actions */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }} aria-label="Wallet and external links">
           {!isMobile && (
             <>
               {isConnected ? (
@@ -102,13 +103,26 @@ const Navbar = () => {
                     size="small"
                     variant="outlined"
                     sx={{ borderColor: 'primary.contrastText', color: 'primary.contrastText' }}
+                    aria-label={`Wallet connected. Full public key: ${wallet?.publicKey}`}
                   />
-                  <Button color="inherit" onClick={disconnectWallet} size="small" disabled={loading}>
+                  <Button 
+                    color="inherit" 
+                    onClick={disconnectWallet} 
+                    size="small" 
+                    disabled={loading}
+                    aria-label="Disconnect wallet"
+                  >
                     Disconnect
                   </Button>
                 </Box>
               ) : (
-                <Button color="inherit" onClick={connectWallet} variant="outlined" disabled={loading}>
+                <Button 
+                  color="inherit" 
+                  onClick={connectWallet} 
+                  variant="outlined" 
+                  disabled={loading}
+                  aria-label={loading ? 'Connecting wallet' : 'Connect wallet'}
+                >
                   {loading ? 'Connecting...' : 'Connect Wallet'}
                 </Button>
               )}
@@ -118,6 +132,7 @@ const Navbar = () => {
                 href="https://github.com/yourusername/stellar-did-platform"
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="View project on GitHub (opens in new tab)"
               >
                 <GitHub />
               </IconButton>
@@ -130,10 +145,15 @@ const Navbar = () => {
               <IconButton
                 color="inherit"
                 onClick={handleMenuOpen}
+                aria-label="Open navigation menu"
+                aria-controls={anchorEl ? 'navigation-menu' : undefined}
+                aria-haspopup="true"
+                aria-expanded={anchorEl ? 'true' : 'false'}
               >
                 <MenuIcon />
               </IconButton>
               <Menu
+                id="navigation-menu"
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
                 onClose={handleMenuClose}
@@ -145,15 +165,17 @@ const Navbar = () => {
                   vertical: 'top',
                   horizontal: 'right',
                 }}
+                aria-label="Navigation menu"
               >
                 {menuItems.map((item) => (
                   <MenuItem
                     key={item.path}
                     onClick={() => handleNavigation(item.path)}
                     selected={location.pathname === item.path}
+                    aria-current={location.pathname === item.path ? 'page' : undefined}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      {item.icon}
+                      <span className="menu-icon" aria-hidden="true">{item.icon}</span>
                       <Typography sx={{ ml: 1 }}>{item.label}</Typography>
                     </Box>
                   </MenuItem>
@@ -162,13 +184,17 @@ const Navbar = () => {
                 <Divider />
                 
                 {isConnected ? (
-                  <MenuItem onClick={disconnectWallet}>
+                  <MenuItem onClick={disconnectWallet} aria-label="Disconnect wallet">
                     <Typography color="success.main">
                       Connected: {wallet?.publicKey?.substring(0, 8)}...
                     </Typography>
                   </MenuItem>
                 ) : (
-                  <MenuItem onClick={connectWallet} disabled={loading}>
+                  <MenuItem 
+                    onClick={connectWallet} 
+                    disabled={loading}
+                    aria-label={loading ? 'Connecting wallet' : 'Connect wallet'}
+                  >
                     <Typography>{loading ? 'Connecting...' : 'Connect Wallet'}</Typography>
                   </MenuItem>
                 )}
@@ -178,9 +204,10 @@ const Navbar = () => {
                   href="https://github.com/yourusername/stellar-did-platform"
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="View project on GitHub (opens in new tab)"
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <GitHub sx={{ mr: 1 }} />
+                    <GitHub sx={{ mr: 1 }} aria-hidden="true" />
                     GitHub
                   </Box>
                 </MenuItem>

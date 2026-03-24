@@ -176,7 +176,7 @@ const Credentials = () => {
   };
 
   return (
-    <Box>
+    <Box component="main" aria-label="Verifiable credentials page">
       <Typography variant="h4" gutterBottom fontWeight="bold">
         Verifiable Credentials
       </Typography>
@@ -185,17 +185,25 @@ const Credentials = () => {
       </Typography>
 
       {/* Tab Navigation */}
-      <Box sx={{ mb: 3 }}>
+      <Box sx={{ mb: 3 }} role="tablist" aria-label="Credential operations">
         <Button
           variant={activeTab === 'issue' ? 'contained' : 'outlined'}
           onClick={() => setActiveTab('issue')}
           sx={{ mr: 2 }}
+          role="tab"
+          aria-selected={activeTab === 'issue'}
+          aria-controls="issue-panel"
+          id="issue-tab"
         >
           Issue Credential
         </Button>
         <Button
           variant={activeTab === 'verify' ? 'contained' : 'outlined'}
           onClick={() => setActiveTab('verify')}
+          role="tab"
+          aria-selected={activeTab === 'verify'}
+          aria-controls="verify-panel"
+          id="verify-tab"
         >
           Verify Credential
         </Button>
@@ -208,11 +216,11 @@ const Credentials = () => {
             <Grid item xs={12} md={8}>
               <Card>
                 <CardContent>
-                  <Typography variant="h6" gutterBottom>
+                  <Typography variant="h6" gutterBottom component="h2">
                     Issue New Credential
                   </Typography>
                   
-                  <form onSubmit={issueForm.handleSubmit(handleIssueCredential)}>
+                  <form onSubmit={issueForm.handleSubmit(handleIssueCredential)} aria-label="Issue credential form" id="issue-panel" role="tabpanel" aria-labelledby="issue-tab">
                     <Controller
                       name="issuerDID"
                       control={issueForm.control}
@@ -225,6 +233,9 @@ const Credentials = () => {
                           margin="normal"
                           error={!!issueForm.formState.errors.issuerDID}
                           helperText={issueForm.formState.errors.issuerDID?.message}
+                          inputProps={{
+                            'aria-describedby': issueForm.formState.errors.issuerDID ? 'issuer-did-error' : undefined,
+                          }}
                         />
                       )}
                     />
@@ -241,6 +252,9 @@ const Credentials = () => {
                           margin="normal"
                           error={!!issueForm.formState.errors.subjectDID}
                           helperText={issueForm.formState.errors.subjectDID?.message}
+                          inputProps={{
+                            'aria-describedby': issueForm.formState.errors.subjectDID ? 'subject-did-error' : undefined,
+                          }}
                         />
                       )}
                     />
@@ -250,8 +264,8 @@ const Credentials = () => {
                       control={issueForm.control}
                       render={({ field }) => (
                         <FormControl fullWidth margin="normal">
-                          <InputLabel>Credential Type</InputLabel>
-                          <Select {...field}>
+                          <InputLabel id="credential-type-label">Credential Type</InputLabel>
+                          <Select {...field} labelId="credential-type-label" aria-labelledby="credential-type-label">
                             <MenuItem value="university-degree">University Degree</MenuItem>
                             <MenuItem value="professional-license">Professional License</MenuItem>
                             <MenuItem value="age-verification">Age Verification</MenuItem>
@@ -266,13 +280,15 @@ const Credentials = () => {
                       control={issueForm.control}
                       render={({ field }) => (
                         <Box sx={{ mt: 2 }}>
-                          <Typography variant="subtitle2" gutterBottom>
+                          <Typography variant="subtitle2" gutterBottom id="claims-label">
                             Claims (JSON format)
                           </Typography>
                           <TextareaAutosize
                             {...field}
                             minRows={6}
                             placeholder='{"degree": "Bachelor of Science", "university": "Example University"}'
+                            aria-labelledby="claims-label"
+                            aria-describedby={issueForm.formState.errors.claims ? 'claims-error' : undefined}
                             sx={{
                               width: '100%',
                               fontFamily: 'monospace',
@@ -286,7 +302,7 @@ const Credentials = () => {
                             }}
                           />
                           {issueForm.formState.errors.claims && (
-                            <Typography variant="caption" color="error">
+                            <Typography variant="caption" color="error" id="claims-error">
                               {issueForm.formState.errors.claims.message}
                             </Typography>
                           )}
@@ -299,8 +315,9 @@ const Credentials = () => {
                       variant="contained"
                       size="large"
                       disabled={loading || !isConnected}
-                      startIcon={loading ? <CircularProgress size={20} /> : <VerifiedUser />}
+                      startIcon={loading ? <CircularProgress size={20} aria-hidden="true" /> : <VerifiedUser aria-hidden="true" />}
                       sx={{ mt: 3 }}
+                      aria-label={loading ? 'Issuing credential' : 'Issue credential'}
                     >
                       Issue Credential
                     </Button>
@@ -312,7 +329,7 @@ const Credentials = () => {
             <Grid item xs={12} md={4}>
               <Card>
                 <CardContent>
-                  <Typography variant="h6" gutterBottom>
+                  <Typography variant="h6" gutterBottom component="h2">
                     Credential Templates
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -320,27 +337,33 @@ const Credentials = () => {
                   </Typography>
                   
                   {templatesLoading ? (
-                    <Box display="flex" justifyContent="center" p={3}>
-                      <CircularProgress size={30} />
+                    <Box display="flex" justifyContent="center" p={3} role="status" aria-live="polite">
+                      <CircularProgress size={30} aria-label="Loading templates" />
                     </Box>
                   ) : (
-                    templates.map((template) => (
-                      <Paper
-                        key={template.id}
-                        sx={{ p: 2, mb: 2, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
-                        onClick={() => useTemplate(template)}
-                      >
-                        <Box display="flex" alignItems="center" mb={1}>
-                          {getCredentialIcon(template.id)}
-                          <Typography variant="subtitle2" sx={{ ml: 1 }}>
-                            {template.name}
+                    <div role="list" aria-label="Credential templates">
+                      {templates.map((template) => (
+                        <Paper
+                          key={template.id}
+                          sx={{ p: 2, mb: 2, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
+                          onClick={() => useTemplate(template)}
+                          role="listitem"
+                          tabIndex={0}
+                          onKeyPress={(e) => { if (e.key === 'Enter') useTemplate(template); }}
+                          aria-label={`Template: ${template.name}. Click to use.`}
+                        >
+                          <Box display="flex" alignItems="center" mb={1}>
+                            <span aria-hidden="true">{getCredentialIcon(template.id)}</span>
+                            <Typography variant="subtitle2" sx={{ ml: 1 }}>
+                              {template.name}
+                            </Typography>
+                          </Box>
+                          <Typography variant="body2" color="text.secondary">
+                            {Object.keys(template.claims).join(', ')}
                           </Typography>
-                        </Box>
-                        <Typography variant="body2" color="text.secondary">
-                          {Object.keys(template.claims).join(', ')}
-                        </Typography>
-                      </Paper>
-                    ))
+                        </Paper>
+                      ))}
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -353,11 +376,11 @@ const Credentials = () => {
           <Grid item xs={12} md={8}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
+                <Typography variant="h6" gutterBottom component="h2">
                   Verify Credential
                 </Typography>
                 
-                <form onSubmit={verifyForm.handleSubmit(handleVerifyCredential)}>
+                <form onSubmit={verifyForm.handleSubmit(handleVerifyCredential)} aria-label="Verify credential form" id="verify-panel" role="tabpanel" aria-labelledby="verify-tab">
                   <Controller
                     name="credentialId"
                     control={verifyForm.control}
@@ -370,6 +393,9 @@ const Credentials = () => {
                         margin="normal"
                         error={!!verifyForm.formState.errors.credentialId}
                         helperText={verifyForm.formState.errors.credentialId?.message}
+                        inputProps={{
+                          'aria-describedby': verifyForm.formState.errors.credentialId ? 'credential-id-error' : undefined,
+                        }}
                       />
                     )}
                   />
@@ -379,8 +405,9 @@ const Credentials = () => {
                     variant="contained"
                     size="large"
                     disabled={loading}
-                    startIcon={loading ? <CircularProgress size={20} /> : <CheckCircle />}
+                    startIcon={loading ? <CircularProgress size={20} aria-hidden="true" /> : <CheckCircle aria-hidden="true" />}
                     sx={{ mt: 2 }}
+                    aria-label={loading ? 'Verifying credential' : 'Verify credential'}
                   >
                     Verify Credential
                   </Button>
@@ -392,33 +419,37 @@ const Credentials = () => {
 
         {/* Results */}
         {result && (
-          <Grid item xs={12}>
+          <Grid item xs={12} role="region" aria-label="Credential operation results">
             <Card>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={3}>
                   {result.valid ? (
-                    <CheckCircle sx={{ mr: 1, color: 'success.main' }} />
+                    <CheckCircle sx={{ mr: 1, color: 'success.main' }} aria-hidden="true" />
                   ) : (
-                    <Error sx={{ mr: 1, color: 'error.main' }} />
+                    <Error sx={{ mr: 1, color: 'error.main' }} aria-hidden="true" />
                   )}
-                  <Typography variant="h6" color={result.valid ? 'success.main' : 'error.main'}>
+                  <Typography variant="h6" color={result.valid ? 'success.main' : 'error.main'} component="h2">
                     {activeTab === 'issue' ? 'Credential Issued' : 'Verification Result'}
                   </Typography>
                 </Box>
 
                 {activeTab === 'issue' && result.credential && (
-                  <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
+                  <Grid container spacing={3} role="list" aria-label="Credential details">
+                    <Grid item xs={12} md={6} role="listitem">
                       <Paper sx={{ p: 2, bgcolor: 'background.default' }}>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom id="credential-id-label">
                           Credential ID
                         </Typography>
                         <Box display="flex" alignItems="center">
-                          <Typography variant="body1" sx={{ fontFamily: 'monospace', mr: 1 }}>
+                          <Typography variant="body1" sx={{ fontFamily: 'monospace', mr: 1 }} aria-labelledby="credential-id-label">
                             {result.credential.id}
                           </Typography>
                           <Tooltip title="Copy Credential ID">
-                            <IconButton size="small" onClick={() => copyToClipboard(result.credential.id)}>
+                            <IconButton 
+                              size="small" 
+                              onClick={() => copyToClipboard(result.credential.id)}
+                              aria-label="Copy credential ID to clipboard"
+                            >
                               <ContentCopy fontSize="small" />
                             </IconButton>
                           </Tooltip>
@@ -426,17 +457,21 @@ const Credentials = () => {
                       </Paper>
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid item xs={12} md={6} role="listitem">
                       <Paper sx={{ p: 2, bgcolor: 'background.default' }}>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom id="tx-hash-label">
                           Transaction Hash
                         </Typography>
                         <Box display="flex" alignItems="center">
-                          <Typography variant="body1" sx={{ fontFamily: 'monospace', mr: 1 }}>
+                          <Typography variant="body1" sx={{ fontFamily: 'monospace', mr: 1 }} aria-labelledby="tx-hash-label">
                             {result.transaction?.hash}
                           </Typography>
                           <Tooltip title="Copy Transaction Hash">
-                            <IconButton size="small" onClick={() => copyToClipboard(result.transaction?.hash)}>
+                            <IconButton 
+                              size="small" 
+                              onClick={() => copyToClipboard(result.transaction?.hash)}
+                              aria-label="Copy transaction hash to clipboard"
+                            >
                               <ContentCopy fontSize="small" />
                             </IconButton>
                           </Tooltip>
@@ -447,27 +482,29 @@ const Credentials = () => {
                 )}
 
                 {activeTab === 'verify' && (
-                  <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
+                  <Grid container spacing={3} role="list" aria-label="Verification results">
+                    <Grid item xs={12} md={6} role="listitem">
                       <Paper sx={{ p: 2, bgcolor: 'background.default' }}>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom id="verification-status-label">
                           Verification Status
                         </Typography>
                         <Chip 
                           label={result.valid ? 'Valid' : 'Invalid'}
                           color={result.valid ? 'success' : 'error'}
                           size="small"
+                          aria-labelledby="verification-status-label"
+                          aria-label={`Credential is ${result.valid ? 'valid' : 'invalid'}`}
                         />
                       </Paper>
                     </Grid>
 
                     {result.verifiedAt && (
-                      <Grid item xs={12} md={6}>
+                      <Grid item xs={12} md={6} role="listitem">
                         <Paper sx={{ p: 2, bgcolor: 'background.default' }}>
-                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom id="verified-at-label">
                             Verified At
                           </Typography>
-                          <Typography variant="body1">
+                          <Typography variant="body1" aria-labelledby="verified-at-label">
                             {new Date(result.verifiedAt).toLocaleString()}
                           </Typography>
                         </Paper>
@@ -478,9 +515,9 @@ const Credentials = () => {
 
                 <Divider sx={{ my: 3 }} />
 
-                <Box>
+                <Box role="region" aria-label={activeTab === 'issue' ? 'Issued credential details' : 'Verification details'}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    <Info sx={{ verticalAlign: 'middle', mr: 1 }} />
+                    <Info sx={{ verticalAlign: 'middle', mr: 1 }} aria-hidden="true" />
                     {activeTab === 'issue' ? 'Issued Credential Details' : 'Verification Details'}
                   </Typography>
                   <Paper sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2 }}>

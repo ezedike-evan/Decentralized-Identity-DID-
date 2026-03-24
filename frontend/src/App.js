@@ -152,7 +152,7 @@ function App() {
       <Router>
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <Navbar />
-          <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+          <Box component="main" sx={{ flexGrow: 1, p: 3 }} role="main" aria-label="Main content">
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/create-did" element={<CreateDID />} />
@@ -174,6 +174,8 @@ function App() {
           draggable
           pauseOnHover
           theme="dark"
+          role="status"
+          aria-live="polite"
         />
       </Router>
     </ThemeProvider>
